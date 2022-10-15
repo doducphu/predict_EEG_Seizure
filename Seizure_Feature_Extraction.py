@@ -76,7 +76,7 @@ def bandpower(data, sf, weighted, mean, band):
     else:
         weighted_window = 'hann'
 
-    # Compute the periodogram (Welch)
+    # Compute the periodogram (Welch) furier method
     freqs, psd = welch(data,
                        sf,
                        window = weighted_window,

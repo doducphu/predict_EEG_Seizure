@@ -24,22 +24,12 @@ def file_list(folder_path, output=False):
 
     return file_list
 
-def data_load(file_path, output=False):
+def data_load(file_path):
     # read in the datafile
     data = pd.read_csv(file_path,  # file in
                        header=None,  # no column names at top of file
                        dtype=float)  # read data as 'floating points' (e.g. 1.0)
 
-    if output:
-        print(color.BOLD + color.UNDERLINE + '\n' + re.findall('\w\d+', file_path)[0] + color.END)
-        # Output detailed information on the data
-        print(color.BOLD + '\nData Information' + color.END)
-        data.info()
-        display(data.info())
-
-        # Output first 5 rows and columns
-        print(color.BOLD + '\nDataframe Head' + color.END)
-        display(data.head())
     return data
 def data_index(feat_data, file_name, output=False):
     # get the file identifier from the file (e.g. F001)

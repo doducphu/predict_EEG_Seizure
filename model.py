@@ -1,30 +1,19 @@
-import gdown
-import os
-import glob            # for file locations
 import pprint          # for pretty printing
-import numpy as np
-import pickle
 from select_feature import data_x,data_y
-import pandas as pd
-import seaborn as sns
-import re
-from IPython.display import display
-from Seizure_Feature_Extraction import Seizure_Features
-from load_data import data_load
-import matplotlib.pyplot as plt
+# import pickle
 import sklearn
 sklearn.__version__
-from sklearn.preprocessing import LabelEncoder
-from tqdm.notebook import tqdm
 RANDOM_STATE = 0
-# # a = []
-f = open("data\\F\\F001.txt", 'r')
-# # for i in f:
-# #     a.append(i.split())
-# # print(a)
+import os
+import tensorflow as tf
 
-# # print(nums)
-# # colours for printing outputs
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+if tf.test.gpu_device_name():
+    print('GPU found')
+else:
+    print("No GPU found")
+
 class color:
     PURPLE = '\033[95m'
     CYAN = '\033[96m'
@@ -37,571 +26,209 @@ class color:
     UNDERLINE = '\033[4m'
     END = '\033[0m'
 
-
 pp = pprint.PrettyPrinter()
 
-
-# def file_list(folder_path, output=False):
-#     # create an empty list
-#     file_list = []
-#     # for file name in the folder path...
-#     for filename in glob.glob(folder_path):
-#         # ... append it to the list
-#         file_list.append(filename)
-#
-#     # sort alphabetically
-#     file_list.sort()
-#
-#     # Output
-#     if output:
-#         print(str(len(file_list)) + " files found")
-#         pp.pprint(file_list)
-#
-#     return file_list
-# # FILE_PATH = 'Epil_features.json.gzip'
-# # Run the code and create/overwite old data?
-# # EPIL_OVERWRITE = True
-# #
-# # # Where to save the feature data
-# # EPIL_SAVE_PATH = 'C:\Users\ADMIN\Desktop\EEG\data'
-# # if not os.path.exists(FILE_PATH):
-# #     gdown.download('https://drive.google.com/uc?id=143dJfY1_U-p8elbvSzwe0TTHGcDo3PYv',
-# #                 './'+FILE_PATH, quiet=False)
-#
-# #
-# # print(color.BOLD + color.UNDERLINE + 'Title' + color.END)
-# # print('Hello World')
-# #
-# # pp = pprint.PrettyPrinter()
-# #
-# #
-# # def file_list(folder_path, output=False):
-# #     # create an empty list
-# #     file_list = []
-# #     # for file name in the folder path...
-# #     for filename in glob.glob(folder_path):
-# #         # ... append it to the list
-# #         file_list.append(filename)
-# #
-# #     # sort alphabetically
-# #     file_list.sort()
-# #
-# #     # Output
-# #     if output:
-# #         print(str(len(file_list)) + " files found")
-# #         pp.pprint(file_list)
-# #
-# #     return file_list
-#
-# def data_load(file_path, output=False):
-#     # read in the datafile
-#     data = pd.read_csv(file_path,  # file in
-#                        header=None,  # no column names at top of file
-#                        dtype=float)  # read data as 'floating points' (e.g. 1.0)
-#
-#     if output:
-#         print(color.BOLD + color.UNDERLINE + '\n' + re.findall('\w\d+', file_path)[0] + color.END)
-#         # Output detailed information on the data
-#         print(color.BOLD + '\nData Information' + color.END)
-#         data.info()
-#
-#         # Output first 5 rows and columns
-#         print(color.BOLD + '\nDataframe Head' + color.END)
-#         display(data.head())
-#
-#     return data
-#
-#
-# def data_index(feat_data, file_name, output=False):
-#     # get the file identifier from the file (e.g. F001)
-#     file_identifier = re.findall('\w\d+', file_name)[0]
-#     # add this identifier to a column
-#     feat_data['file_id'] = file_identifier
-#
-#     # if the file identifier has an S in...
-#     if re.findall('S', file_identifier):
-#         # make a class column with 'seizure' in
-#         feat_data['class'] = 'seizure'
-#     # ...otherwise...
-#     else:
-#         # .. make a class column with 'Baseline' in
-#         feat_data['class'] = 'baseline'
-#
-#     # if the file identifier has a Z or O in...
-#     if re.findall('Z|O', file_identifier):
-#         # make a location column with 'surface' in
-#         feat_data['location'] = 'surface'
-#     # if the file identifier has an N in...
-#     elif re.findall('N', file_identifier):
-#         # make a location column with 'intracranial hippocampus' in
-#         feat_data['location'] = 'intracranial hippocampus'
-#     # if the file identifier has an S or F in...
-#     elif re.findall('F|S', file_identifier):
-#         # make a location column with 'intracranial epileptogenic zone' in
-#         feat_data['location'] = 'intracranial epileptogenic zone'
-#
-#     # name the index
-#     feat_data.columns.name = 'feature'
-#
-#     # add the file_id and class to the index
-#     feat_data = feat_data.set_index(['file_id', 'class', 'location'])
-#     # reorder the index so class is first, then file_id, then feature
-#     feat_data = feat_data.reorder_levels(['class', 'location', 'file_id'], axis='index')
-#
-#     if output:
-#         display(feat_data)
-#
-#     return feat_data
-#
-# #
-# # if EPIL_OVERWRITE:
-# #     # delete the old version
-# #     if os.path.exists(EPIL_SAVE_PATH):
-# #         os.remove(EPIL_SAVE_PATH)
-# DOWNLOAD_DIR = "data"
-# if not os.path.exists(DOWNLOAD_DIR):
-#     print("Error when loading data")
-# else:
-#     print("Already Downloaded")
-#
-# EPIL_dir_file_list = file_list(os.path.join(DOWNLOAD_DIR, '*'), output=True)
-# feature_df = pd.DataFrame()
-# # iterate across the list of folders
-# for folder in EPIL_dir_file_list:
-#     # get a list of files in each folder
-#     folder_files_list = file_list(os.path.join(folder, '*'))
-#     # iteratate across the files in each folder
-#     for file in folder_files_list:
-#         # load the file
-#         df = data_load(file)
-#
-#         # setup the feature extraction function
-#         feat = Seizure_Features(sf=173.61,
-#                                 window_size=None,
-#                                 feature_list=['power', 'power_ratio', 'mean',
-#                                               'mean_abs', 'std', 'ratio', 'LSWT'],
-#                                 bandpasses=[[2, 4], [4, 8], [8, 12], [12, 30], [30, 70]])
-#         # transform the data using the function
-#         part_x_feat = feat.transform(df.values, channel_names_list=['CZ'])
-#         # put the numpy output back into a pandas df
-#         part_x_feat = pd.DataFrame(part_x_feat, columns=feat.feature_names)
-#         # re-index the data
-#         part_x_feat = data_index(part_x_feat, file)
-#         # if there is no data in the feature data so far...
-#         if feature_df.empty:
-#             # then make this the feature dataframe...
-#             feature_df = part_x_feat
-#         else:
-#             # ...otherwise combine the two dataframes together down the index
-#             feature_df = pd.concat([feature_df, part_x_feat], axis='index')
-#
-# # display the dataframe
-#
-# # reset the index into columns (for easy saving)
-# feature_df_save = feature_df.reset_index()
-# feature_df = feature_df_save
-# display(feature_df)
-# # reset the index into columns (for easy saving)
-# # feature_df_save = feature_df.reset_index()
-#
-# # # save the dataframe to disk for later use
-# # feature_df_save.to_json(EPIL_SAVE_PATH,
-# #                         orient='index',
-# #                         compression='gzip')
-# # epil_baseline_file = os.path.join(EPIL_dir_file_list[0], 'F020.txt')
-# # epil_seizure_file = os.path.join(EPIL_dir_file_list[3], 'S020.txt')
-# #
-# #
-# #
-# # def data_load(file_path, output=False):
-# #     # read in the datafile
-# #     data = pd.read_csv(file_path,header=None,dtype=float)
-# #
-# #     if output:
-# #         print(color.BOLD + color.UNDERLINE + '\n' + re.findall('\w\d+', file_path)[0] + color.END)
-# #         # Output detailed information on the data
-# #         print(color.BOLD + '\nData Information' + color.END)
-# #         data.info()
-# #
-# #         # Output first 5 rows and columns
-# #         print(color.BOLD + '\nDataframe Head' + color.END)
-# #         display(data.head())
-# #
-# #     return data
-# # epil_baseline_df = data_load(epil_baseline_file, output=True)
-# # epil_seizure_df = data_load(epil_seizure_file, output=True)
-#
-# # channel_name= ['CZ']
-# # channel_type = ['eeg']
-# # sample_rate = 173.61 # in hz
-# #
-# # # create an mne info file with meta data about the EEG
-# # info = mne.create_info(ch_names=channel_name, sfreq=sample_rate,
-# #                        ch_types=channel_type)
-# #
-# # # show the info file
-# # display(info)
-# #
-# #
-# # def mne_object(data, info, output=False):
-# #     data = data.apply(lambda x: x * 1e-6)
-# #     # transpose the data
-# #     data_T = data.transpose()
-# #     # create raw mne object
-# #     raw = mne.io.RawArray(data_T, info)
-# #
-# #     return raw
-# #
-# #
-# # epil_baseline_mne = mne_object(epil_baseline_df, info, output=True)
-# # epil_seizure_mne = mne_object(epil_seizure_df, info, output=True)
-# # plot_kwargs = {
-# #     'scalings': dict(eeg=20e-4),   # zooms the plot out
-# #     'highpass': 0.53,              # filters out low frequencies
-# #     'lowpass': 40.,                # filters out high frequencies
-# #     'n_channels': 1,               # just plot the one channel
-# #     'duration': 24                # number of seconds to plot
-# # }
-# #
-# # print(color.BOLD+color.UNDERLINE+"Inter-Ictal"+color.END)
-# # epil_baseline_mne.plot(**plot_kwargs)
-# # print(color.BOLD+color.UNDERLINE+"Ictal"+color.END)
-# # epil_seizure_mne.plot(**plot_kwargs)
-# #
-# # for directory in EPIL_dir_file_list:
-# #     # if re.findall('N|F|S',directory[-1]):
-# #     # make a list of all the files in the directory
-# #     files = file_list(os.path.join(directory, '*'))
-# #     # randomly select 9 files from the list
-# #     sampled_files = random.sample(files, 9)
-# #
-# #     fig, axs = plt.subplots(3, 3, sharex=True, sharey=True)
-# #     x = 0
-# #     y = 0
-# #     for file in sampled_files:
-# #
-# #         # read in the datafile
-# #         data = pd.read_csv(file,  # file in
-# #                            header=None,  # no column names at top of file
-# #                            dtype=float)  # read data as 'floating points' (e.g. 1.0)
-# #
-# #         # filter the data
-# #         b, a = signal.butter(4, [1 / (sample_rate / 2), 30 / (sample_rate / 2)], 'bandpass', analog=False)
-# #         filt_data = signal.filtfilt(b, a, data.T).T
-# #
-# #         axs[x, y].plot(filt_data)
-# #         axs[x, y].set_title(re.findall('\w\d+', file)[0], pad=-15)
-# #         # plot all of them on the same scale
-# #         axs[x, y].set_ylim([-2100, 2100])
-# #
-# #         x += 1
-# #
-# #         if x == 3:
-# #             y += 1
-# #             x = 0
-# #
-# #     # add a big axes, hide frame
-# #     fig.add_subplot(111, frameon=False)
-# #     # hide tick and tick label of the big axes
-# #     plt.tick_params(labelcolor='none', top=False, bottom=False, left=False, right=False)
-# #     plt.grid(False)
-# #     plt.xlabel("Datapoints", labelpad=0.5)
-# #     plt.ylabel("Microvolts (uV)", labelpad=20)
-# #     plt.subplots_adjust(wspace=0.1, hspace=0.1)
-# #
-# #     if directory[-1] == 'N':
-# #         plt.title('Inter-ictal: Opposite Hippocampus')
-# #
-# #     elif directory[-1] == 'F':
-# #         plt.title('Inter-ictal: Epileptogenic Zone')
-# #
-# #     elif directory[-1] == 'S':
-# #         plt.title('Ictal: Epileptogenic Zone')
-# #
-# #     elif directory[-1] == 'Z':
-# #         plt.title('Surface EEG: Eyes Open')
-# #
-# #     elif directory[-1] == 'O':
-# #         plt.title('Surface EEG: Eyes Closed')
-# #
-# #     plt.show()
-# # load features dataframe
-# # feature_df = pd.read_json(FILE_PATH, orient='index', compression = 'gzip')
-#
-# # display examples of the data
-# # display(feature_df.head())
-# feature_df['location'].unique()
-# # # select only intracranial EEG
-# # feature_reduced = feature_df[feature_df.location != 'surface']
-# # feature_reduced['location'].unique()
-# #
-# # feature_df_drop = feature_df.drop(['class', 'file_id', 'location'], axis='columns')
-# # data_x = feature_df_drop.values
-# #
-# # display(feature_df['class'].value_counts())
-# #
-# # class_series = feature_df['class']
-# #
-# # # make a label encoder
-# le = LabelEncoder()
-# # # change the string labels to ints
-# # data_y = le.fit_transform(class_series)
-# # location_series = feature_df['location']
-# # # get the unique labels
-# # labels = list(class_series.unique())
-# # # print out the labels and their new codes
-# # for i, code in enumerate(list(le.transform(labels))):
-# #     print(labels[i] + ': ' + str(code))
-# #
-# # one_hot_y = pd.get_dummies(location_series.unique())
-# # dummy_y = pd.get_dummies(location_series.unique(), drop_first=True)
-# #
-# # print(color.BOLD+color.UNDERLINE+'Onehot'+color.END)
-# # display(one_hot_y.head())
-# # print(color.BOLD+color.UNDERLINE+'Dummy'+color.END)
-# # display(dummy_y.head())
-# # select only intracranial EEG
-# feature_reduced = feature_df[feature_df.location != 'surface']
-# # drop the columns which are not feature variables
-# feature_reduced_drop = feature_reduced.drop(['class', 'file_id', 'location'], axis='columns')
-# # change to an array
-# data_x = feature_reduced_drop.values
-# # change the string labels to ints
-# data_y = le.fit_transform(feature_reduced['class'])
-
-# print(color.BOLD+'Feature DataFrame'+color.END)
-# display(data_x.shape)
-# print(color.BOLD+'Target DataFrame'+color.END)
-# display(data_y.shape)
-
-
-
-# print(color.BOLD+color.UNDERLINE+'Feature DataFrame'+color.END)
-# print('Training size: ' + str(X_train.shape))
-# print('Validation size: ' + str(X_val.shape))
-# print('Test size: ' + str(X_test.shape))
-# print(color.BOLD+color.UNDERLINE+'\nTarget DataFrame'+color.END)
-# print('Training size: ' + str(y_train.shape))
-# print('Validation size: ' + str(y_val.shape))
-# print('Test size: ' + str(y_test.shape))
-#
-#
-# def get_proportions(data):
-#     counts = pd.DataFrame(np.unique(data, return_counts=True), index=['Class_ID', 'Counts']).T
-#     counts['Percent'] = (counts['Counts'] / counts['Counts'].sum()).round(2) * 100
-#     counts = counts.set_index('Class_ID')
-#     return counts
-#
-#
-# print(color.BOLD + color.UNDERLINE + 'Training DataFrame' + color.END)
-# display(get_proportions(y_train))
-# print(color.BOLD + color.UNDERLINE + '\nTest DataFrame' + color.END)
-# display(get_proportions(y_test))
-# from sklearn.preprocessing import StandardScaler
-#
-# scaler = StandardScaler()
-# X_train_scale = scaler.fit_transform(X_train)
-#
-# feature_list = list(feature_reduced_drop.columns)
-# x_axis_label = 'CZ|D1_ratio'
-# y_axis_label = 'CZ|D2_ratio'
-#
-# reduced_array = X_train_scale[:,[feature_list.index(x_axis_label),feature_list.index(y_axis_label)]]
-# reduced_df = pd.DataFrame(reduced_array, columns=[x_axis_label, y_axis_label])
-#
-# display(reduced_df.head())
-#
-#
-# sns.set(color_codes=True)
-#
-#
-# def plot_pairplot(data_x, data_y):
-#     data_plot = data_x.copy()
-#     data_plot['class'] = np.vectorize({0: 'Baseline', 1: 'Seizure'}.get)(data_y)
-#     sns.pairplot(data_plot,
-#                  hue='class',
-#                  hue_order=['Baseline', 'Seizure'],
-#                  markers=["o", "s"],
-#                  plot_kws=dict(alpha=0.5))
-#
-#     # plt.show(block=True)
-#
-# plot_pairplot(reduced_df, y_train)
-#
-#
-# from sklearn.linear_model import LogisticRegression
-#
-# reg = LogisticRegression(C=100.,
-#                          solver='liblinear',
-#                          random_state=RANDOM_STATE)
-#
-# reg.fit(X_train_scale, y_train)
-# vis_data = X_train_scale[:,[feature_list.index(x_axis_label),
-#                           feature_list.index(y_axis_label)]]
-# from mlxtend.plotting import plot_decision_regions
-#
-# reg.fit(vis_data, y_train)
-#
-# plot_decision_regions(vis_data,
-#                       y_train,
-#                       clf = reg)
-#
-# plt.xlabel(x_axis_label + ' [standardized]')
-# plt.ylabel(y_axis_label + ' [standardized]')
-# plt.show(block = True)
 # from sklearn.pipeline import Pipeline
-#
-# pipe_reg = Pipeline([('scl', StandardScaler()),
-#                      ('clf', LogisticRegression(C=0.00001,
-#                                                 solver='liblinear',
-#                                                 class_weight='balanced',
-#                                                 random_state=RANDOM_STATE))])
-#
-#
-# pipe_reg.fit(X_train, y_train)
-# print('Validation Accuracy: %.3f' % pipe_reg.score(X_val, y_val))
-# log_predicted = pipe_reg.predict(X_val)
-# display(log_predicted)
-# display(y_val)
-#
+# from sklearn.preprocessing import StandardScaler
 # from sklearn.svm import SVC
-#
-# pipe_svc_linear = Pipeline([('scl', StandardScaler()),
-#                             ('clf', SVC(C=100,
-#                                         kernel='linear',
-#                                         class_weight = 'balanced',
-#                                         random_state=RANDOM_STATE))])
-#
-# from mlxtend.plotting import plot_decision_regions
-#
-# vis_data = X_train[:,[feature_list.index(x_axis_label),
-#                       feature_list.index(y_axis_label)]]
-#
-# pipe_svc_linear.fit(vis_data, y_train)
-#
-# plot_decision_regions(vis_data,
-#                       y_train,
-#                       clf = pipe_svc_linear)
-#
-# plt.xlabel(x_axis_label)
-# plt.ylabel(y_axis_label)
-# plt.xlim(0,.6)
-# plt.ylim(0,1.)
-#
-# plt.savefig('svm_linear_boundary.png')
-# plt.show()
-# pipe_svc_rbf = Pipeline([('scl', StandardScaler()),
-#                          ('clf', SVC(C=100,
-#                                      kernel='rbf',
-#                                      class_weight = 'balanced',
-#                                      random_state=RANDOM_STATE))])
-#
-# pipe_svc_rbf.fit(vis_data, y_train)
-# pipe_svc_rbf.fit(X_train, y_train)
-# print('Validation Accuracy: %.3f' % pipe_svc_rbf.score(X_val, y_val))
-# from sklearn.neighbors import KNeighborsClassifier
-# pipe_knn = Pipeline([('scl', StandardScaler()),
-#                      ('clf', KNeighborsClassifier(n_neighbors=2))])
-#
-# pipe_knn.fit(vis_data, y_train)
-#
-# plot_decision_regions(vis_data,
-#                       y_train,
-#                       clf = pipe_knn)
-#
-# plt.xlabel(x_axis_label)
-# plt.ylabel(y_axis_label)
-# plt.xlim(0,.6)
-# plt.ylim(0,1.)
-# plt.show()
-# pipe_knn.fit(X_train, y_train)
-# print('Validation Accuracy: %.3f' % pipe_knn.score(X_val, y_val))
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-from Seizure_Feature_Extraction import Seizure_Features
+
 from sklearn.model_selection import train_test_split
-TEST_SIZE = 0.2
-f_testmodel = open("data\\S\\S001.txt", 'r')
+TEST_SIZE = 0.15
 X_train, X_test, y_train, y_test = train_test_split(data_x, data_y,
                                                     test_size=TEST_SIZE,
                                                     random_state=RANDOM_STATE)
-feature_df1 = pd.DataFrame()
-df1 = data_load(f_testmodel)
-feat1 = Seizure_Features(sf=173.61,
-                                window_size=None,
-                                feature_list=['power', 'power_ratio', 'mean',
-                                              'mean_abs', 'std', 'ratio', 'LSWT'],
-                                bandpasses=[[2, 4], [4, 8], [8, 12], [12, 30], [30, 70]])
-        # transform the data using the function
-part_x_feat1 = feat1.transform(df1.values, channel_names_list=['CZ'])
-        # put the numpy output back into a pandas df
-part_x_feat1 = pd.DataFrame(part_x_feat1, columns=feat1.feature_names)
-        # re-index the data
 
-if feature_df1.empty:
-            # then make this the feature dataframe...
-    feature_df1 = part_x_feat1
-else:
-            # ...otherwise combine the two dataframes together down the index
-    feature_df1 = pd.concat([feature_df1, part_x_feat1], axis='index')
-# display the dataframe
-display(feature_df1)
-# reset the index into columns (for easy saving)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
+                                                  test_size=TEST_SIZE,
+                                                  random_state=RANDOM_STATE)
 
+# print('Training size: ' + str(X_train.shape))
+# print('Validation size: ' + str(X_val.shape))
+# print('Test size: ' + str(X_test.shape))
 #
-# feature_df1['location'].unique()
-# from sklearn.tree import DecisionTreeClassifier
-# from sklearn.neighbors import KNeighborsClassifier
+# print('Training size: ' + str(y_train.shape))
+# print('Validation size: ' + str(y_val.shape))
+# print('Test size: ' + str(y_test.shape))
 
-# # Logistic Regression
-# pipe_reg = Pipeline([('scl', StandardScaler()),
-#                      ('clf', LogisticRegression(class_weight='balanced',
-#                                                 solver = 'liblinear',
-#                                                 random_state=RANDOM_STATE))])
+from keras.layers import *
+from keras.backend import clear_session
+from keras.models import Sequential
+from keras.optimizers import Adam
+import numpy as np
 
-# Support Vector Machine
-pipe_svc = Pipeline([('scl', StandardScaler()),
-                    ('clf', SVC(kernel='rbf',
-                                class_weight = 'balanced',
-                                probability=True,
-                                random_state=RANDOM_STATE))])
 
-# # Decision Tree
-# DT = DecisionTreeClassifier(random_state=RANDOM_STATE)
+
+X_train = np.array(X_train)
+X_test = np.array(X_test)
+X_val = np.array(X_val)
+y_train = np.array(y_train)
+y_val = np.array(y_val)
+y_test = np.array(y_test)
+print("X Train shape: ", X_train.shape)
+print("X Test shape: ", X_test.shape)
+print("X val shape: ",X_val.shape)
+print("Y Train shape: ", y_train.shape)
+print("Y test shape: ",y_test.shape)
+print("Y val shape:",y_val.shape)
+X_train = np.reshape(X_train,(X_train.shape[0],X_train.shape[1],1))
+X_val = np.reshape(X_val,(X_val.shape[0],X_val.shape[1],1))
+# Returns a short sequential model
+# def create_model(input_shape, flatten=False):
+#     clear_session()
+#     model = Sequential()
 #
-# # K-Nearest Neighbours
-# pipe_kkn = Pipeline([('scl', StandardScaler()),
-#                     ('clf', KNeighborsClassifier())])
+#     # this just tells the model what input shape to expect
+#     model.add(Input(shape=input_shape))
+#     for i in range(2):
+#         model.add(Conv1D(filters=64,
+#                          kernel_size=3,
+#                          padding="same",
+#                          activation='relu'))
+#
+#     model.add(MaxPooling1D(pool_size=3,  # size of the window
+#                            strides=2,  # factor to downsample
+#                            padding='same'))
+#
+#     for i in range(2):
+#         model.add(Conv1D(filters=128,
+#                          kernel_size=3,
+#                          padding="same",
+#                          activation='relu'))
+#     # model.add(LSTM(100, return_sequences=True))
+#     # model.add(Dropout(0.4))
+#     if flatten:
+#         model.add(Flatten())
+#     else:
+#         model.add(GlobalAveragePooling1D())
+#
+#
+#
+#     model.add(Dense(units=64,
+#                     activation='relu'))
+#
+#     model.add(Dense(units=1,
+#                     activation='sigmoid'))
+#
+#     model.compile(optimizer=Adam(0.001),
+#                   loss='binary_crossentropy',
+#                   metrics=['accuracy', 'Recall', 'Precision'])
+#     return model
+#
+# # Create a basic model instance
+# model = create_model((X_train.shape[1],1))
+# # # model = create_model(np.reshape(X_train, (X_train.shape[0], -1)))
+# # # model= create_model( np.expand_dims(X_train,axis=1))
+# model.summary()
 
-# classifier names
-classifier_names ='Super Vector Machine'
+def create_model(input_shape, flatten=False):
+    clear_session()
+    model = Sequential()
+
+    # this just tells the model what input shape to expect
+    model.add(Input(shape=input_shape))
+    for i in range(2):
+        model.add(Conv1D(filters=64,
+                         kernel_size=3,
+                         padding="same",
+                         activation='relu'))
+
+    model.add(MaxPooling1D(pool_size=3,  # size of the window
+                           strides=2,  # factor to downsample
+                           padding='same'))
+
+    for i in range(2):
+        model.add(Conv1D(filters=128,
+                         kernel_size=3,
+                         padding="same",
+                         activation='relu'))
+    # model.add(LSTM(50, return_sequences=True))
+    # model.add(Dropout(0.2))
+    if flatten:
+        model.add(Flatten())
+    else:
+        model.add(GlobalAveragePooling1D())
 
 
-# list of classifiers
-classifier = pipe_svc
 
-classifier.fit(X_train, y_train)
-# save model to disk
-pickle.dump(classifier,open('SVMClassifier.pkl','wb'))
-#load model to disk
-loaded_model = pickle.load(open('SVMClassifier.pkl','rb'))
-result = loaded_model.score(X_test,y_test)
-print(result)
-test = loaded_model.predict(feature_df1)
-if test == 0:
-    test = "Baseline"
-else:
-    test = "Seizure"
-print(test)
+    model.add(Dense(units=64,
+                    activation='relu'))
 
+    model.add(Dense(units=1,
+                    activation='sigmoid'))
 
+    model.compile(optimizer=Adam(0.001),
+                  loss='binary_crossentropy',
+                  metrics=['accuracy', 'Recall', 'Precision'])
+    return model
 
+# Create a basic model instance
+model = create_model((X_train.shape[1],1))
+# # model = create_model(np.reshape(X_train, (X_train.shape[0], -1)))
+# # model= create_model( np.expand_dims(X_train,axis=1))
+model.summary()
 
+from keras.callbacks import ModelCheckpoint, EarlyStopping, TensorBoard, ReduceLROnPlateau
 
+def create_callbacks(best_model_filepath, tensorboard_logs_filepath):
+    callback_checkpoint = ModelCheckpoint(filepath=best_model_filepath,
+                                          monitor='val_loss',
+                                          verbose=0,
+                                          save_weights_only=False,
+                                          save_best_only=False)
 
+    callback_early_stopping = EarlyStopping(monitor='val_loss',
+                                            patience=10,
+                                            verbose=1)
 
+    callback_tensorboard = TensorBoard(log_dir=tensorboard_logs_filepath,
+                                       histogram_freq=0,
+                                       write_graph=False)
 
+    callback_reduce_lr = ReduceLROnPlateau(monitor='val_loss',
+                                           factor=0.1,
+                                           min_lr=1e-4,
+                                           patience=0,
+                                           verbose=1)
+
+    return [callback_checkpoint, callback_early_stopping,
+            callback_tensorboard, callback_reduce_lr]
+from sklearn.utils.class_weight import compute_class_weight
+
+EPOCHS = 200
+BATCH_SIZE = 64
+best_model_filepath = "CNN1D_Model.ckpt"
+tensorboard_logs_filepath = "./CNN1D_logs/"
+
+# calculate the class weights
+class_weights = compute_class_weight(class_weight = "balanced", classes= np.unique(y_train),y=y_train)
+class_weights = {i : class_weights[i] for i in range(2)}
+# class_weights = dict(zip(np.unique(y_train), class_weights))
+history_1D = model.fit(X_train,y_train,batch_size=BATCH_SIZE,epochs=EPOCHS,validation_data = (X_val, y_val),
+                       callbacks= create_callbacks(best_model_filepath,tensorboard_logs_filepath) ,class_weight = class_weights,verbose=1)
+# # Support Vector Machine
+import matplotlib.pyplot as plt
+
+def plot_progress(history_dict):
+    for key in list(history_dict.keys())[:5]:
+        plt.clf()  # Clears the figure
+        training_values = history_dict[key]
+        val_values = history_dict['val_' + key]
+        epochs = range(1, len(training_values) + 1)
+
+        plt.plot(epochs, training_values, 'bo', label='Training ' + key)
+
+        plt.plot(epochs, val_values, 'b', label='Validation ' + key)
+
+        if key != 'loss':
+            plt.ylim([0., 1.1])
+
+        plt.title('Training and Validation ' + key)
+        plt.xlabel('Epochs')
+        plt.ylabel(key)
+        plt.legend()
+        plt.show()
+
+plot_progress(history_1D.history)
 
 
 
