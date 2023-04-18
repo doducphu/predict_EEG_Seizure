@@ -44,19 +44,19 @@ for folder in EPIL_dir_file_list:
 # reset the index into columns (for easy saving)
 feature_df_save = feature_df.reset_index()
 feature_df = feature_df_save
-display(feature_df)
 
 feature_df['location'].unique()
-
+display(feature_df)
 # # make a label encoder
 le = LabelEncoder()
 # # change the string labels to ints
 
 # select only intracranial EEG
-feature_reduced = feature_df[feature_df.location != 'surface']
+# feature_reduced = feature_df[feature_df.location != 'intracranial hippocampus']
 # drop the columns which are not feature variables
-feature_reduced_drop = feature_reduced.drop(['class', 'file_id', 'location'], axis='columns')
+feature_reduced_drop =feature_df.drop(['class', 'file_id', 'location'], axis='columns')
+
 # change to an array
 data_x = feature_reduced_drop.values
 # change the string labels to ints
-data_y = le.fit_transform(feature_reduced['class'])
+data_y = le.fit_transform(feature_df['class'])

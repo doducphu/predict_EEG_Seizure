@@ -2,16 +2,15 @@ import numpy as np
 import pandas as pd
 from scipy.signal import tukey, welch
 from pywt import wavedec, swt
-import scipy
-import sklearn
+
 from sklearn import preprocessing
 from sklearn.base import BaseEstimator, TransformerMixin
-from scipy import stats
+
 from itertools import combinations
-from numpy import inf
+
 import math
 from sklearn.preprocessing import StandardScaler
-import os
+
 def window(a, w, o, copy = False):
     # if there is no window to be applied
     if w == None:
@@ -356,64 +355,7 @@ def frequency_scale(data):
     scaled_data = scaled_data.reshape(orig_shape)
     
     return scaled_data
-'''
-=======================
-CLASS: Seizure_Features
-=======================
 
-- sf
-    - Sampling frequency
-- downsample
-    - Factor to downsample by
-- window_size
-    - Seconds(int)/datapoints(float) to epoch the data into
-    - Can be None for no epoching
-- overlap
-    - Seconds(int)/datapoints(float) overlap between windows
-    - Default None for no overlap
-- weighted
-    - If to apply a weighting to the window (default False)
-- feature_list
-    - list of features to be extracted
-        - power:
-        - power_ratio:
-        - mean:
-        - mean_abs:
-        - std:
-        - ratio:
-        - LSWT:
-        - fft_eigen:
-        - fft_corr:
-        - time_corr:
-        - time_eigen:
-        - sample_entropy: LIMITED IMPLIMENTATION
-        - spectral_entropy: LIMITED IMPLIMENTATION
-        - wavelet_coherence: NOT YET IMPLIMENTED
-- bandpasses
-    - list of bandpasses to extract for the power measure
-- bandpass_mean
-    - whether to take the mean or median of the Welch output
-- bandpass_ratios
-    - list of bandpasses to get a ratio between
-- wavelet
-    - type of wavelet to use
-- wavelet_transform
-    - type of transformation to use ('DWT' or 'UDWT')
-- levels
-    - how many levels to get from the wavelet transform
-- fft_band
-    - The fft band used for the fft_corr and fft_eigen methods
-- scale
-    - Whether to scale the data according to the mean so it has a standard deviation of 1.
-    - Features based on frequency will be scaled in respect to each other.
-    - If scikitlearn is >= 0.20.0 then you can leave NAN's in for the input if scaling
-- target
-    - the event target if doing binary classification
-    - will override baseline if both provided
-- baseline
-    - the event target representing the class of least interest
-    - if target and baseline both not provided then takes the most common class in window to classify window
-'''
 
 class Seizure_Features(BaseEstimator, TransformerMixin):
     def __init__(self,
@@ -508,20 +450,20 @@ class Seizure_Features(BaseEstimator, TransformerMixin):
                                               weighted= self.weighted,
                                               mean = self.bandpass_mean,
                                               band = bandpass)
-                    
+
                     welch_data = feature_append(welch_data, bandpass_data)
 
                     # if channel_names were provided...
                     if isinstance(channel_names_list, list):
                         # ...append the channel and frequency band to the list
                         feature_names.append(channel_names_list[j]+'|'+str(bandpass[0])+'_'+str(bandpass[1])+'Hz')
-                
+
                 if self.scale:
                     welch_data = frequency_scale(welch_data)
 
                 # append the data straight into the feature set
                 feature_set = feature_append(feature_set, welch_data, expand=False)
-                
+
 
             # BANDPASS RATIOS
             if 'power_ratio' in self.feature_list:
@@ -538,7 +480,7 @@ class Seizure_Features(BaseEstimator, TransformerMixin):
                                               band = bandpass_ratio[1])
                     # divide bandpass 2 from 1
                     relative_power = bandpass_2/bandpass_1
-                    
+
                     if self.scale:
                         relative_power = frequency_scale(relative_power)
 
@@ -549,11 +491,9 @@ class Seizure_Features(BaseEstimator, TransformerMixin):
                         ratio_str = str(bandpass_ratio[0][0])+'_'+str(bandpass_ratio[0][1])+'/'+str(bandpass_ratio[1][0])+'_'+str(bandpass_ratio[1][1])+'Hz'
                         # ...append the channel and frequency band to the list
                         feature_names.append(channel_names_list[j]+'|Ratio_'+ratio_str)
-                        
-                        
-            # --------
-            # WAVELETS
-            # --------
+
+
+
             if any(i in wav_features for i in self.feature_list):
                 # if channel_names were provided...
                 if isinstance(channel_names_list, list):
@@ -576,10 +516,10 @@ class Seizure_Features(BaseEstimator, TransformerMixin):
                                                          wavelet_transform = self.wavelet_transform,
                                                          level=self.levels,
                                                          scale = self.scale)
-                    
+
                 # append the wavelet feature without expanding the data
                 feature_set = feature_append(feature_set, wavelet_features, expand=False)
-                
+
             # -------
             # Entropy
             # -------
@@ -593,14 +533,14 @@ class Seizure_Features(BaseEstimator, TransformerMixin):
                     feature_names.extend(entropy_feat_names)
                 else:
                     entropy_features = entropy(channel_windowed, self.feature_list, self.sf)
-                    
+
                 if self.scale:
                     SS = StandardScaler()
                     # scale data for each feature separately
                     entropy_features = SS.fit_transform(entropy_features)
                 # append the wavelet feature without expanding the data
                 feature_set = feature_append(feature_set, entropy_features, expand=False)
-             
+
         # ----------
         # EIGEN CORR
         # ----------
@@ -608,7 +548,7 @@ class Seizure_Features(BaseEstimator, TransformerMixin):
             if any(i in eigen_corr_features for i in self.feature_list):
                 # append the window data
                 all_windowed_channels = feature_append(all_windowed_channels, channel_windowed, axis=2, expand=True)
-        
+
         # if any of the correlation or eigenvalue methods have been specified...
         if any(i in eigen_corr_features for i in self.feature_list):
             # default bools so only need to check these rather than search
@@ -617,7 +557,7 @@ class Seizure_Features(BaseEstimator, TransformerMixin):
                          'fft_corr': False,
                          'time_eigen': False,
                          'time_corr': False}
-            
+
             if 'fft_corr' in self.feature_list:
                 bool_dict['fft_corr'] = True
             if 'fft_eigen' in self.feature_list:
@@ -699,7 +639,7 @@ class Seizure_Features(BaseEstimator, TransformerMixin):
                         feature_names.extend([channel_comb+'|fft_corr' for channel_comb in corr_comb])
                     if bool_dict['time_corr']:
                         feature_names.extend([channel_comb+'|time_corr' for channel_comb in corr_comb])
-                    
+
         # set feature names as a class attribute
         self.feature_names = feature_names
         

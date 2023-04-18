@@ -1,7 +1,14 @@
 import pickle
+
+import keras
+import tensorflow as tf
+from keras.models import load_model
 import pandas as pd
 from IPython.display import display
 from load_data import data_load
+import numpy as np
+from keras.models import load_model
+from keras.optimizers import Adam
 import sklearn
 sklearn.__version__
 from Seizure_Feature_Extraction import Seizure_Features
@@ -28,13 +35,21 @@ def runmodel(fileinput):
         feature_df1 = pd.concat([feature_df1, part_x_feat1], axis='index')
     # display the dataframe
     display(feature_df1)
-    # Apply model ML in input data
-    loaded_model = pickle.load(open('SVMClassifier.pkl', 'rb'))
-    test = loaded_model.predict(feature_df1)
-    if test == 0:
-        return "Baseline"
-    else:
-        return "Seizure"
+    class_names = ['baseline','seizure']  # fill the rest
+
+    model = keras.models.load_model("modelCNN_LSTM.h5")
 
 
+    # model.predict(fileinput)
+    # model.compile(optimizer=Adam(0.001),
+    #               loss='binary_crossentropy',
+    #               metrics=['accuracy', 'Recall', 'Precision'])
+    #
+    # classes = np.argmax(model.predict(feature_df1), axis=-1)
+    # print(classes)
+    #
+    # names = [class_names[i] for i in classes]
+    #
+    # print(names)
 
+runmodel("test1.txt")

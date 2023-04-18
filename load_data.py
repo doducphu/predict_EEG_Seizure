@@ -55,7 +55,7 @@ def data_index(feat_data, file_name, output=False):
         # make a location column with 'intracranial hippocampus' in
         feat_data['location'] = 'intracranial hippocampus'
     # if the file identifier has an S or F in...
-    elif re.findall('F|S', file_identifier):
+    elif re.findall('S|F', file_identifier):
         # make a location column with 'intracranial epileptogenic zone' in
         feat_data['location'] = 'intracranial epileptogenic zone'
 

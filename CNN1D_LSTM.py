@@ -7,7 +7,7 @@ RANDOM_STATE = 0
 import os
 import tensorflow as tf
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 if tf.test.gpu_device_name():
     print('GPU found')
@@ -132,8 +132,8 @@ def create_model(input_shape, flatten=False):
                          padding="same",
                          activation='relu'))
 
-    model.add(MaxPooling1D(pool_size=3,  # size of the window
-                           strides=2,  # factor to downsample
+    model.add(MaxPooling1D(pool_size=3,
+                           strides=2,
                            padding='same'))
 
     for i in range(2):
@@ -141,13 +141,13 @@ def create_model(input_shape, flatten=False):
                          kernel_size=3,
                          padding="same",
                          activation='relu'))
-    # model.add(LSTM(50, return_sequences=True))
-    # model.add(Dropout(0.2))
+    model.add(Dropout(0.2))
+    model.add(LSTM(128, return_sequences=True))
+    model.add(LSTM(64, return_sequences=True))
     if flatten:
         model.add(Flatten())
     else:
         model.add(GlobalAveragePooling1D())
-
 
 
     model.add(Dense(units=64,
@@ -205,11 +205,12 @@ class_weights = {i : class_weights[i] for i in range(2)}
 # class_weights = dict(zip(np.unique(y_train), class_weights))
 history_1D = model.fit(X_train,y_train,batch_size=BATCH_SIZE,epochs=EPOCHS,validation_data = (X_val, y_val),
                        callbacks= create_callbacks(best_model_filepath,tensorboard_logs_filepath) ,class_weight = class_weights,verbose=1)
+model.save('modelCNN_LSTM.h5')
 # # Support Vector Machine
 import matplotlib.pyplot as plt
 
 def plot_progress(history_dict):
-    for key in list(history_dict.keys())[:5]:
+    for key in list(history_dict.keys())[:4]:
         plt.clf()  # Clears the figure
         training_values = history_dict[key]
         val_values = history_dict['val_' + key]
@@ -229,6 +230,75 @@ def plot_progress(history_dict):
         plt.show()
 
 plot_progress(history_1D.history)
+
+# pipe_svc = Pipeline([('scl', StandardScaler()),
+#                     ('clf', SVC(kernel='rbf',
+#                                 class_weight = 'balanced',
+#                                 probability=True,
+#                                 random_state=RANDOM_STATE))])
+# # classifier names
+# classifier_names ='Super Vector Machine'
+#
+# # list of classifiers
+# classifier = pipe_svc
+#
+# classifier.fit(X_train, y_train)
+# # save model to disk
+# pickle.dump(classifier,open('SVMClassifier.pkl','wb'))
+# #load model to disk
+# loaded_model = pickle.load(open('SVMClassifier.pkl','rb'))
+# result = loaded_model.score(X_test,y_test)
+# print(result)
+# from tensorflow.keras.models import Sequential
+# from tensorflow.keras.layers import Dense, Activation, Dropout, BatchNormalization, Input, Reshape, Conv2D,MaxPooling2D, Flatten, Reshape, GlobalAveragePooling2D, SeparableConv2D, add
+# from tensorflow.keras.backend import clear_session
+# from tensorflow.keras.optimizers import Adam
+
+
+# # Returns a short sequential model
+# def create_model(data_shape):
+#     model = Sequential()
+#
+#     model.add(Input(shape=data_shape[1:]))
+#
+#     for i in range(2):
+#         model.add(Conv2D(filters=64,
+#                          kernel_size=3,
+#                          padding="same"))
+#         model.add(BatchNormalization())
+#         model.add(Activation('relu'))
+
+#     model.add(MaxPooling2D(pool_size=2))
+#
+#     for i in range(2):
+#         model.add(Conv2D(filters=128,
+#                          kernel_size=3,
+#                          padding="same"))
+#         model.add(BatchNormalization())
+#         model.add(Activation('relu'))
+#
+#     model.add(MaxPooling2D(pool_size=2))
+#
+#     model.add(GlobalAveragePooling2D())
+#
+#     model.add(Dense(units=100,
+#                     activation='relu'))
+#
+#     model.add(Dense(units=50,
+#                     activation='relu'))
+#
+#     model.add(Dense(units=1,
+#                     activation='sigmoid'))
+#
+#     model.compile(optimizer=Adam(0.001),
+#                   loss='binary_crossentropy',
+#                   metrics=['accuracy', 'AUC', 'Recall', 'Precision'])
+#     return model
+
+# clear_session()
+# # Create a basic model instance
+# model = create_model(X_train.shape)
+# model.summary()
 
 
 
